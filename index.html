@@ -234,7 +234,7 @@ async function drawMap(){
  const valid=points.map((p,i)=>({p,r:rows[i],i})).filter(x=>x.p);
  const selected=valid.find(x=>x.r.id===selection?.id);
  const note=(state.sample?'예시 단지 좌표 · ':'')+valid.length+'/'+rows.length+' 위치 표시'+(valid.length<rows.length?' · 좌표 미확인 단지는 카카오맵 검색을 이용하세요.':'');
- $('mapNote').textContent=(maps?'카카오지도':'OpenStreetMap · 카카오맵는 단지 링크에서 열기')+' · '+note;
+ $('mapNote').textContent=(maps?'카카오지도':'OpenStreetMap · 카카오맵은 단지 링크에서 열기')+' · '+note;
  if(maps){
   if(leaflet){leaflet.remove();leaflet=null;layer=null;}
   const pt=p=>new maps.LatLng(...p);
@@ -275,7 +275,11 @@ function gallery(){
  return '<div class="gallery">'+photos.map(p=>'<figure style="margin:0"><a href="'+esc(p.url)+'" target="_blank" rel="noopener"><img src="'+p.src+'" alt="'+p.label+'" loading="lazy">'+p.label+' · '+esc(p.author)+'</a> <a href="'+p.license+'">라이선스</a></figure>').join('')+'</div>';
 }
 let detailSeq=0;
-async function showDetail(r){
+function hideDetail(){
+ ++detailSeq;
+ $('detail').hidden=true;
+}
+async function showDetail(r,scroll=false){
  const token=++detailSeq;
  $('detailTitle').textContent=r.name;
  const images=[r.photo,...(r.photos||[])].map(p=>photoUrl(p||'')).filter(Boolean);
@@ -322,7 +326,7 @@ listingForm.onsubmit=e=>{
  try{localStorage.setItem('shine-yongsan-picks-v1',JSON.stringify([...added,item]));}catch{$('status').textContent='브라우저 저장 공간을 사용할 수 없어 매물을 저장하지 못했습니다.';return;}
  added.push(item);listingForm.reset();listingForm.elements.type.onchange();$('editor').close();renderCards();
 };
-listingForm.elements.photo.oninput=()=>listingForm.elements.photo.setCustomValidity('');
+for(const name of ['photo','photos'])listingForm.elements[name].oninput=()=>listingForm.elements[name].setCustomValidity('');
 renderCards();refresh();
 api('config').then(c=>{config=c;drawMap();}).catch(()=>{});
 
