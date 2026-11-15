@@ -629,7 +629,7 @@ mapViewport.addEventListener('wheel',event=>{
 },{passive:false});
 let drag;
 mapViewport.addEventListener('pointerdown',event=>{
- if(!event.isPrimary||event.button!==0||event.target.closest('.map-tools,.map-popup,.map-provider-status,.map-attribution'))return;
+ if(!event.isPrimary||event.button!==0||event.target.closest('.map-tools,.map-popup,.map-provider-status,.map-attribution,.local-pin,a.nearby-map-label'))return;
  drag={id:event.pointerId,x:event.clientX,y:event.clientY,left:view.x,top:view.y};
  drag.moved=false;
 });
@@ -654,9 +654,9 @@ function renderMapPopup(row){
  if(!row){mapPopup.replaceChildren();return;}
  const candidates=apt.filter(item=>same(item,row));
  const latest=type=>candidates.filter(item=>item.type===type).sort((a,b)=>b.date.localeCompare(a.date))[0];
- const current=latest(tradeTypeFor(row))||row;
+ const current=[...candidates].sort((a,b)=>b.date.localeCompare(a.date))[0]||row;
  const value=type=>{const item=latest(type);return item?money(item):'—';};
- mapPopup.innerHTML='<button type="button" aria-label="단지 정보 닫기" class="map-popup-close">×</button><strong>'+esc(row.name)+'</strong><small>예시 거래 · 조회 기간 내 최근 기록</small><dl><dt>매매가</dt><dd>'+esc(value('sale'))+'</dd><dt>전세가</dt><dd>'+esc(value('lease'))+'</dd><dt>월세</dt><dd>'+esc(value('rent'))+'</dd><dt>전용면적</dt><dd>'+esc(area(current))+'</dd><dt>최근 거래일</dt><dd>'+esc(current.date||'—')+'</dd></dl>';
+ mapPopup.innerHTML='<button type="button" aria-label="단지 정보 닫기" class="map-popup-close">×</button><strong>'+esc(row.name)+'</strong><small>예시 거래 · 유형별 최근 가격 · 면적과 날짜는 가장 최근 거래 기준</small><dl><dt>매매가</dt><dd>'+esc(value('sale'))+'</dd><dt>전세가</dt><dd>'+esc(value('lease'))+'</dd><dt>월세</dt><dd>'+esc(value('rent'))+'</dd><dt>전용면적</dt><dd>'+esc(area(current))+'</dd><dt>최근 거래일</dt><dd>'+esc(current.date||'—')+'</dd></dl>';
  mapPopup.querySelector('button').onclick=()=>{selection=null;hideDetail();renderRank();};
 }
 function drawNearbyLabels(width,height,pins){
@@ -665,22 +665,27 @@ function drawNearbyLabels(width,height,pins){
  const sorted=[...nearbyMapLabels].sort((a,b)=>categories[a[3]][1]-categories[b[3]][1]);
  for(const [x,y,name,kind] of sorted){
   const [icon,priority]=categories[kind];
-  if(view.zoom<1.25&&priority===2)continue;
-  const left=(x-view.x)*view.zoom/4096*width,top=(y-view.y)*view.zoom/2048*height;
-  const w=name.length*12+(icon?25:8);
-  if(left<6||left+w>width-6||top<10||top>height-20)continue;
-  if(pins.some(([px,py])=>px>left-17&&px<left+w+16&&Math.abs(py-top)<23))continue;
-  if(used.some(([px,py,pw])=>Math.abs(py-top)<21&&left<px+pw+5&&left+w+5>px))continue;
+  if(view.zoom<1.25&&priority===2&&width<540)continue;
+  const anchorX=(x-view.x)*view.zoom/4096*width,anchorY=(y-view.y)*view.zoom/2048*height;
+  if(anchorX<0||anchorX>width||anchorY<0||anchorY>height)continue;
   const label=document.createElement(kind==='place'?'span':'a');
   label.className='nearby-map-label '+(kind==='station'?'station':kind==='place'?'district':'poi');
+  label.textContent=(icon?icon+' ':'')+name;
+  mapLayer.append(label);
+  const w=label.offsetWidth;
+  const placements=[[0,0],[-w,0],[-w/2,-21],[-w/2,21]];
+  const position=placements.map(([dx,dy])=>[anchorX+dx,anchorY+dy]).find(([left,top])=>
+   left>=5&&left+w<=width-5&&top>=11&&top<=height-15
+   &&!pins.some(([px,py])=>px>left-16&&px<left+w+16&&Math.abs(py-top)<21)
+   &&!used.some(([px,py,pw])=>Math.abs(py-top)<20&&left<px+pw+4&&left+w+4>px));
+  if(!position){label.remove();continue;}
+  const [left,top]=position;
   label.style.left=left+'px';
   label.style.top=top+'px';
-  label.textContent=(icon?icon+' ':'')+name;
   if(kind!=='place'){
    label.href=kakaoLink('서울 '+name);label.target='_blank';label.rel='noopener';
    label.setAttribute('aria-label',name+' 카카오맵에서 보기');
   }
-  mapLayer.append(label);
   used.push([left,top,w]);
  }
 }
