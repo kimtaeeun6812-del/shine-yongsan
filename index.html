@@ -588,7 +588,10 @@ function renderRank(){
  rank=top10(apt||[],state.trade);
  $('rankRule').textContent='단지별 '+({sale:'최고 매매가',lease:'최고 보증금',rent:'최고 월 임대료'}[state.trade])+' 기준';
  $('rows').innerHTML=rank.length?rank.map((r,i)=>'<button class="rankrow" aria-pressed="'+(selection?.id===r.id)+'" data-rank="'+i+'"><span class="ranknum">'+String(i+1).padStart(2,'0')+'</span><span>'+esc(r.name)+'<small>'+esc(r.dong+' · '+area(r)+' · '+r.date.slice(5))+'</small></span><strong>'+esc(money(r))+'</strong></button>').join(''):'<p class="empty">'+(!loaded?'조회 중입니다.':apt===null?'실거래 조회에 실패했습니다.':state.sample?'이 동의 시연용 단지가 없습니다.':'기간 내 해당 유형 신고 거래가 없습니다.')+'</p>';
- $('rows').querySelectorAll('button').forEach(b=>b.onclick=()=>choose(rank[Number(b.dataset.rank)]));
+ $('rows').querySelectorAll('button').forEach(b=>b.onclick=()=>{
+  choose(rank[Number(b.dataset.rank)]);
+  if(matchMedia('(max-width:760px)').matches)mapViewport.scrollIntoView({block:'center',behavior:'instant'});
+ });
  drawMap();renderSelected();
 }
 function choose(r,scroll=false){selection=r;renderRank();showDetail(r,scroll);}
