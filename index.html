@@ -652,15 +652,15 @@ for(const type of ['pointerup','pointercancel','lostpointercapture'])mapViewport
 function renderMapPopup(row){
  mapPopup.hidden=!row;
  if(!row){mapPopup.replaceChildren();return;}
- const candidates=apt.filter(item=>same(item,row));
+ const candidates=(apt||[]).filter(item=>same(item,row));
  const latest=type=>candidates.filter(item=>item.type===type).sort((a,b)=>b.date.localeCompare(a.date))[0];
  const current=[...candidates].sort((a,b)=>b.date.localeCompare(a.date))[0]||row;
  const value=type=>{const item=latest(type);return item?money(item):'—';};
- mapPopup.innerHTML='<button type="button" aria-label="단지 정보 닫기" class="map-popup-close">×</button><strong>'+esc(row.name)+'</strong><small>예시 거래 · 유형별 최근 가격 · 면적과 날짜는 가장 최근 거래 기준</small><dl><dt>매매가</dt><dd>'+esc(value('sale'))+'</dd><dt>전세가</dt><dd>'+esc(value('lease'))+'</dd><dt>월세</dt><dd>'+esc(value('rent'))+'</dd><dt>전용면적</dt><dd>'+esc(area(current))+'</dd><dt>최근 거래일</dt><dd>'+esc(current.date||'—')+'</dd></dl>';
+ mapPopup.innerHTML='<button type="button" aria-label="단지 정보 닫기" class="map-popup-close">×</button><strong>'+esc(row.name)+'</strong><small>'+(row.sample?'예시 거래':'신고 거래')+' · 유형별 최근 가격 · 면적과 날짜는 가장 최근 거래 기준</small><dl><dt>매매가</dt><dd>'+esc(value('sale'))+'</dd><dt>전세가</dt><dd>'+esc(value('lease'))+'</dd><dt>월세</dt><dd>'+esc(value('rent'))+'</dd><dt>전용면적</dt><dd>'+esc(area(current))+'</dd><dt>최근 거래일</dt><dd>'+esc(current.date||'—')+'</dd></dl>';
  mapPopup.querySelector('button').onclick=()=>{selection=null;hideDetail();renderRank();};
 }
 function drawNearbyLabels(width,height,pins){
- const categories={station:['🚇',0],문화:['◆',1],공원:['●',1],백화점:['▣',1],마트:['▣',2],관공서:['●',2],place:['',3]};
+ const categories={station:['🚇',0],문화:['◆',1],공원:['🌳',-1],백화점:['▣',1],마트:['▣',2],관공서:['●',2],place:['',3]};
  const used=[];
  const sorted=[...nearbyMapLabels].sort((a,b)=>categories[a[3]][1]-categories[b[3]][1]);
  for(const [x,y,name,kind] of sorted){
